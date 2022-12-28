@@ -1,0 +1,158 @@
+openapi: 3.0.3
+info:
+  title: Watchlist API
+  version: 1.0.0
+servers:
+  - url: /v1
+externalDocs:
+  description: Read architecture document
+  url: https://github.com/cweagans/plutotv-watchlist
+tags:
+  - name: progress
+    description: Tracks view progress within a given video asset.
+  - name: watchlist
+    description: Tracks a set of video assets that a user wants to watch.
+security:
+  - bearerAuth: []
+paths:
+  /progress:
+    get:
+      tags:
+        - progress
+      summary: Get a list of all progress records for the current user.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressArray'
+  /progress/{assetId}:
+    get:
+      tags:
+        - progress
+      summary: Get progress for a given asset.
+      parameters:
+        - name: assetId
+          in: path
+          description: Asset ID to update progress for.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progress'
+        '400':
+          description: Bad request
+        '404':
+          description: Unknown asset or no progress for asset
+    put:
+      tags:
+        - progress
+      summary: Update progress for a given asset.
+      parameters:
+        - name: assetId
+          in: path
+          description: Asset ID to update progress for.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Update progress for an asset.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgressUpdate'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Bad request
+        '404':
+          description: Unknown asset
+        '416':
+          description: Progress out of range
+    delete:
+      tags:
+        - progress
+      summary: Ensure that no progress record exists for a given asset.
+      description: This endpoint does *not* check for a valid asset ID. It is only ensuring that the user does not have progress recorded for the given asset ID.
+      parameters:
+        - name: assetId
+          in: path
+          description: Asset ID to update progress for.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+  /watchlist/{assetId}:
+    put:
+      tags:
+        - watchlist
+      summary: Ensure that the given asset ID is on the watchlist.
+      parameters:
+        - name: assetId
+          in: path
+          description: Asset ID to add to the watchlist.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Unknown asset
+    delete:
+      tags:
+        - watchlist
+      summary: Ensure that the given asset ID is not on the watchlist.
+      description: This endpoint does *not* check for a valid asset ID. It is only ensuring that the user does not have progress recorded for the given asset ID.
+      parameters:
+        - name: assetId
+          in: path
+          description: Asset ID to remove from the watchlist.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+components:
+  schemas:
+    ProgressSeconds:
+      type: integer
+      format: int64
+      description: Number of seconds that the user has watched.
+    ProgressUpdate:
+      type: object
+      properties:
+        progress:
+          $ref: '#/components/schemas/ProgressSeconds'
+    Progress:
+      type: object
+      properties:
+        asset:
+          type: string
+          format: uuid
+        progress:
+          $ref: '#/components/schemas/ProgressSeconds'
+    ProgressArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/Progress'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
